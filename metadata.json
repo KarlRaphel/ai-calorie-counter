@@ -1,0 +1,9 @@
+{
+  "name": "AI Calorie Counter",
+  "short_name": "Calorie Counter",
+  "description": "A PWA calorie calculator powered by OpenAI-compatible API, featuring photo analysis, chat-based refinement, and history tracking.",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#10b981"
+}
