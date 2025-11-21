@@ -29,7 +29,7 @@ const SettingsTab: React.FC<SettingsProps> = ({ settings, onSave }) => {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto p-4 pb-24">
+    <div className="flex flex-col h-full bg-gray-50 overflow-y-auto p-4 pb-16">
       <h1 className="text-2xl font-bold text-gray-800 mb-6 mt-4">设置</h1>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -83,7 +83,7 @@ const SettingsTab: React.FC<SettingsProps> = ({ settings, onSave }) => {
                 value={formData.modelName}
                 onChange={handleChange}
                 placeholder="your_model"
-                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
+                className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"
               />
             </div>
           </div>

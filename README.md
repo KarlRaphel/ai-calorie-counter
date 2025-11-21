@@ -27,17 +27,16 @@
 ### 安装步骤
 
 1. 克隆或下载项目到本地
-
 2. 安装依赖：
+
    ```bash
    npm install
    ```
-
 3. 启动开发服务器：
+
    ```bash
    npm run dev
    ```
-
 4. 打开浏览器访问 `http://localhost:5173`
 
 ### 构建生产版本
@@ -108,7 +107,7 @@ ai-calorie-counter/
 │   ├── Settings.tsx     # 设置界面
 │   └── BottomNav.tsx    # 底部导航栏
 ├── services/            # 服务类
-│   └── geminiService.ts # API 服务（使用 OpenAI 兼容接口）
+│   └── aiService.ts     # API 服务（使用 OpenAI 兼容接口）
 ├── utils/               # 工具函数
 │   └── storage.ts       # 本地存储工具
 ├── types.ts             # 类型定义

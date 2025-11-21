@@ -16,7 +16,7 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 pb-safe pt-2 px-6 h-[80px] flex justify-around items-start z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+    <div className="absolute bottom-0 left-0 w-full bg-white border-t border-gray-200 px-6 h-[65px] flex justify-around items-center z-50">
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
@@ -24,12 +24,12 @@ const BottomNav: React.FC<BottomNavProps> = ({ activeTab, onTabChange }) => {
           <button
             key={item.id}
             onClick={() => onTabChange(item.id)}
-            className={`flex flex-col items-center justify-center w-16 transition-colors duration-200 ${
+            className={`flex flex-col items-center justify-center transition-colors duration-200 ${
               isActive ? 'text-emerald-600' : 'text-gray-400 hover:text-gray-600'
             }`}
           >
-            <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
-            <span className="text-xs mt-1 font-medium">{item.label}</span>
+            <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+            <span className="text-[10px] mt-0.5 font-medium">{item.label}</span>
           </button>
         );
       })}

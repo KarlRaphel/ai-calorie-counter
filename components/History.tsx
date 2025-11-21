@@ -185,7 +185,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
           </div>
         </div>
         
-        {/* Search & Stats */}
+        {/* Search */}
         <div className="flex gap-3 items-center">
             <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -197,68 +197,63 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
                     className="w-full bg-gray-100 text-sm py-2 pl-9 pr-4 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
                 />
             </div>
-            <div className="text-right">
-                <span className="block text-xs text-gray-500">总热量</span>
-                <span className="font-bold text-emerald-600">{totalCalories} kcal</span>
-            </div>
         </div>
       </div>
       
       {/* 统计卡片区域 - 位于搜索栏下方，记录上方 */}
       <div className="p-4 space-y-4 border-b border-gray-100 bg-gray-50">
         {/* 统计卡片行 */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-2">
           {/* 本日统计 */}
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
-            <div className="text-blue-800 text-sm font-medium mb-1">今日总热量</div>
-            <div className="text-2xl font-bold text-blue-900">{todayCalories}</div>
-            <div className="text-xs text-blue-600">kcal</div>
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
+            <div className="text-blue-800 text-xs font-medium mb-1">今日热量</div>
+            <div className="text-lg font-bold text-blue-900">{todayCalories}</div>
+            <div className="text-[10px] text-blue-600">kcal</div>
           </div>
           
           {/* 本周统计 */}
-          <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-4">
-            <div className="text-emerald-800 text-sm font-medium mb-1">本周总热量</div>
-            <div className="text-2xl font-bold text-emerald-900">{weekCalories}</div>
-            <div className="text-xs text-emerald-600">kcal</div>
+          <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-lg p-3">
+            <div className="text-emerald-800 text-xs font-medium mb-1">本周热量</div>
+            <div className="text-lg font-bold text-emerald-900">{weekCalories}</div>
+            <div className="text-[10px] text-emerald-600">kcal</div>
           </div>
           
           {/* 本月统计 */}
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
-            <div className="text-purple-800 text-sm font-medium mb-1">本月总热量</div>
-            <div className="text-2xl font-bold text-purple-900">{monthCalories}</div>
-            <div className="text-xs text-purple-600">kcal</div>
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-3">
+            <div className="text-purple-800 text-xs font-medium mb-1">本月热量</div>
+            <div className="text-lg font-bold text-purple-900">{monthCalories}</div>
+            <div className="text-[10px] text-purple-600">kcal</div>
           </div>
         </div>
         
         {/* 本周热量折线图 */}
-        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-3">本周每日热量趋势</h3>
-          <div className="h-64">
+        <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+          <h3 className="font-semibold text-gray-800 text-sm mb-2">本周每日热量趋势</h3>
+          <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={weeklyData}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                <XAxis dataKey="day" stroke="#666" />
-                <YAxis stroke="#666" />
+                <XAxis dataKey="day" stroke="#666" tick={{ fontSize: 11 }} />
+                <YAxis stroke="#666" tick={{ fontSize: 11 }} />
                 <Tooltip 
                   formatter={(value) => [`${value} kcal`, '热量']}
                   labelFormatter={(label) => `日期: ${label}`}
                   contentStyle={{ 
                     backgroundColor: 'white', 
                     border: '1px solid #e5e7eb', 
-                    borderRadius: '0.5rem' 
+                    borderRadius: '0.5rem',
+                    fontSize: '12px'
                   }}
                 />
-                <Legend />
                 <Line 
                   type="monotone" 
                   dataKey="calories" 
                   stroke="#10b981" 
                   strokeWidth={2} 
-                  activeDot={{ r: 8 }} 
-                  name="热量(kcal)" 
+                  activeDot={{ r: 6 }} 
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -267,7 +262,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-3">
+      <div className="flex-1 overflow-y-auto p-4 pb-16 space-y-3">
         {filteredHistory.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-gray-400">
             <p>暂无记录</p>

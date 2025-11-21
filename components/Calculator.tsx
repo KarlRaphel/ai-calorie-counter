@@ -25,11 +25,11 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const geminiService = useRef(new OpenAIService(settings));
+  const aiService = useRef(new OpenAIService(settings));
 
   // Re-instantiate service if settings change
   useEffect(() => {
-    geminiService.current = new OpenAIService(settings);
+    aiService.current = new OpenAIService(settings);
   }, [settings]);
 
   // Scroll to bottom
@@ -70,20 +70,37 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
     try {
       const historyForApi = messages.filter(m => m.id !== 'welcome');
       
-      const responseText = await geminiService.current.sendMessage(
-        newMessage.text || (newMessage.image ? "这图里有多少卡路里？" : ""), 
-        newMessage.image,
-        historyForApi
-      );
-
-      const botMessage: Message = {
+      // 创建一个临时的bot消息用于显示流式响应
+      const tempBotMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
-        text: responseText,
+        text: '',
         timestamp: Date.now(),
       };
-      setMessages((prev) => [...prev, botMessage]);
+      
+      // 先添加一个空消息
+      setMessages(prev => [...prev, tempBotMessage]);
+      
+      // 使用流式传输获取响应
+      await aiService.current.sendMessageStream(
+        newMessage.text || (newMessage.image ? "这图里有多少卡路里？" : ""), 
+        newMessage.image,
+        historyForApi,
+        (chunk) => {
+          // 更新临时消息的内容
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === tempBotMessage.id 
+                ? { ...msg, text: msg.text + chunk } 
+                : msg
+            )
+          );
+        }
+      );
     } catch (error: any) {
+      // 如果流式传输失败，移除临时消息并添加错误消息
+      setMessages(prev => prev.filter(msg => msg.id !== (Date.now() + 1).toString()));
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'model',
@@ -101,7 +118,7 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
     setIsSaving(true);
     try {
       const conversation = messages.filter(m => m.id !== 'welcome');
-      const result = await geminiService.current.summarizeSession(conversation);
+      const result = await aiService.current.summarizeSession(conversation);
       onSaveMeal(result.summary, result.calories);
       
       if(confirm("保存成功！是否开始新的计算？")) {
@@ -129,24 +146,26 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
   return (
     <div className="flex flex-col h-full bg-gray-50 relative">
       {/* Header */}
-      <div className="bg-white shadow-sm px-4 py-3 flex justify-between items-center z-10 h-[60px]">
-        <h1 className="font-bold text-lg text-gray-800">卡路里计算器</h1>
-        <button 
-            onClick={handleSave}
-            disabled={messages.length < 2 || isSaving}
-            className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                messages.length < 2 || isSaving
-                ? 'bg-gray-200 text-gray-400' 
-                : 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700 active:scale-95'
-            }`}
-        >
-            {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            保存记录
-        </button>
+      <div className="bg-white px-4 py-4 shadow-sm z-10">
+        <div className="flex justify-between items-center">
+          <h1 className="text-2xl font-bold text-gray-800">卡路里计算器</h1>
+          <button 
+              onClick={handleSave}
+              disabled={messages.length < 2 || isSaving}
+              className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                  messages.length < 2 || isSaving
+                  ? 'bg-gray-200 text-gray-400' 
+                  : 'bg-emerald-600 text-white shadow-md hover:bg-emerald-700 active:scale-95'
+              }`}
+          >
+              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+              保存记录
+          </button>
+        </div>
       </div>
 
       {/* Chat Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-40">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
         {messages.map((msg) => (
           <div
             key={msg.id}
@@ -188,7 +207,7 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
       </div>
 
       {/* Input Area */}
-      <div className="absolute bottom-[80px] left-0 right-0 bg-white border-t border-gray-200 p-3 z-20">
+      <div className="absolute bottom-[65px] left-0 right-0 bg-white border-t border-gray-200 p-3 z-20">
         {/* Image Preview */}
         {inputImage && (
           <div className="absolute bottom-full left-4 mb-2 bg-white p-1 rounded-lg shadow-lg border border-gray-200 animate-in slide-in-from-bottom-2 z-30">
