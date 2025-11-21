@@ -41,12 +41,17 @@ const App: React.FC = () => {
     saveHistory(updatedHistory);
   };
 
+  const handleUpdateHistory = (updatedRecords: MealRecord[]) => {
+    setHistory(updatedRecords);
+    saveHistory(updatedRecords);
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case Tab.CALCULATOR:
         return <CalculatorTab settings={settings} onSaveMeal={handleSaveMeal} />;
       case Tab.HISTORY:
-        return <HistoryTab history={history} onDelete={handleDeleteHistory} />;
+        return <HistoryTab history={history} onDelete={handleDeleteHistory} onImport={handleUpdateHistory} />;
       case Tab.SETTINGS:
         return <SettingsTab settings={settings} onSave={handleSaveSettings} />;
       default:

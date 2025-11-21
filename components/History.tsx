@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MealRecord } from '../types';
 import { Download, Search, CheckSquare, Square } from 'lucide-react';
 import {
@@ -15,12 +15,93 @@ import {
 interface HistoryProps {
   history: MealRecord[];
   onDelete: (ids: string[]) => void;
+  onImport?: (records: MealRecord[]) => void;
 }
 
-const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
+const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [showBackupMenu, setShowBackupMenu] = useState(false);
+
+  // 点击外部区域关闭备份菜单
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showBackupMenu) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('.backup-menu-container')) {
+          setShowBackupMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showBackupMenu]);
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const importedData: any[] = JSON.parse(text);
+
+        // 验证导入的数据格式
+        if (!Array.isArray(importedData) || 
+            !importedData.every(item => 
+              typeof item === 'object' && 
+              'id' in item && 
+              'timestamp' in item && 
+              'summary' in item && 
+              'calories' in item
+            )) {
+          alert('导入的文件格式不正确');
+          return;
+        }
+
+        // 转换为 MealRecord 格式
+        const importedRecords: MealRecord[] = importedData.map(item => ({
+          id: item.id,
+          timestamp: item.timestamp,
+          summary: item.summary,
+          calories: item.calories
+        }));
+
+        // 合并数据：如果时间戳相同则覆盖，否则添加新记录
+        const existingIds = new Set(history.map(record => record.id));
+        const newRecords = [...history];
+
+        for (const importedRecord of importedRecords) {
+          const existingIndex = newRecords.findIndex(r => r.timestamp === importedRecord.timestamp);
+          if (existingIndex !== -1) {
+            // 如果时间戳相同，替换该记录
+            newRecords[existingIndex] = importedRecord;
+          } else if (!existingIds.has(importedRecord.id)) {
+            // 如果ID不存在，添加新记录
+            newRecords.push(importedRecord);
+          }
+        }
+
+        if (onImport) {
+          // 通过回调通知父组件更新历史记录
+          onImport(newRecords);
+        } else {
+          alert('导入功能未正确配置，请联系开发者');
+        }
+      } catch (error) {
+        console.error('导入失败:', error);
+        alert('导入失败，请检查文件格式是否正确');
+      }
+    };
+    input.click();
+  };
 
   // 辅助函数：判断日期是否在某个时间段内
   const isToday = (date: Date) => {
@@ -145,21 +226,46 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
       <div className="bg-white px-4 py-4 shadow-sm z-10">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-gray-800">饮食记录</h1>
-          <div className="flex gap-2">
+          <div className="flex gap-2 relative">
             {!isSelectionMode ? (
               <>
-                <button
-                  onClick={handleExport}
-                  className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
-                  title="导出"
-                >
-                  <Download size={20} />
-                </button>
+                <div className="relative backup-menu-container">
+                  <button
+                    onClick={() => setShowBackupMenu(!showBackupMenu)}
+                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                    title="备份管理"
+                  >
+                    <Download size={20} />
+                  </button>
+                  
+                  {showBackupMenu && (
+                    <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-2">
+                      <button
+                        onClick={() => {
+                          handleExport();
+                          setShowBackupMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        导出备份
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleImport();
+                          setShowBackupMenu(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        导入备份
+                      </button>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => setIsSelectionMode(true)}
                   className="text-emerald-600 font-medium text-sm px-2"
                 >
-                  管理
+                  条目管理
                 </button>
               </>
             ) : (
@@ -170,6 +276,16 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
                   className={`text-red-500 font-medium text-sm px-2 ${selectedIds.size === 0 ? 'opacity-50' : ''}`}
                 >
                   删除 ({selectedIds.size})
+                </button>
+                <button
+                  onClick={() => {
+                    // 全选功能：选择所有可见的记录
+                    const visibleRecords = filteredHistory.map(item => item.id);
+                    setSelectedIds(new Set(visibleRecords));
+                  }}
+                  className="text-emerald-600 font-medium text-sm px-2"
+                >
+                  全选
                 </button>
                 <button
                   onClick={() => {
@@ -228,16 +344,25 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
         
         {/* 本周热量折线图 */}
         <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
-          <h3 className="font-semibold text-gray-800 text-sm mb-2">本周每日热量趋势</h3>
+          <h3 className="font-semibold text-gray-800 text-sm mb-3">本周每日热量趋势</h3>
           <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={weeklyData}
-                margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
+                margin={{ top: 15, right: 15, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                <XAxis dataKey="day" stroke="#666" tick={{ fontSize: 11 }} />
-                <YAxis stroke="#666" tick={{ fontSize: 11 }} />
+                <XAxis 
+                  dataKey="day" 
+                  stroke="#666" 
+                  tick={{ fontSize: 11 }} 
+                  padding={{ left: 5, right: 5 }}
+                />
+                <YAxis 
+                  stroke="#666" 
+                  tick={{ fontSize: 11 }} 
+                  width={35}
+                />
                 <Tooltip 
                   formatter={(value) => [`${value} kcal`, '热量']}
                   labelFormatter={(label) => `日期: ${label}`}
