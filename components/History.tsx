@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { MealRecord } from '../types';
-import { Trash2, Download, Search, CheckSquare, Square } from 'lucide-react';
+import { Download, Search, CheckSquare, Square } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 interface HistoryProps {
   history: MealRecord[];
@@ -11,6 +21,77 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // 辅助函数：判断日期是否在某个时间段内
+  const isToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  const isThisWeek = (date: Date) => {
+    const today = new Date();
+    const firstDayOfWeek = new Date(today);
+    firstDayOfWeek.setDate(today.getDate() - today.getDay()); // 周日作为一周开始
+    const lastDayOfWeek = new Date(firstDayOfWeek);
+    lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
+    
+    return date >= firstDayOfWeek && date <= lastDayOfWeek;
+  };
+
+  const isThisMonth = (date: Date) => {
+    const today = new Date();
+    return date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
+
+  // 统计函数
+  const getCaloriesStats = () => {
+    const todayCalories = history.filter(record => isToday(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
+    const weekCalories = history.filter(record => isThisWeek(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
+    const monthCalories = history.filter(record => isThisMonth(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
+    
+    return { todayCalories, weekCalories, monthCalories };
+  };
+
+  // 生成本周每日热量数据用于折线图
+  const getWeeklyData = () => {
+    const today = new Date();
+    const firstDayOfWeek = new Date(today);
+    firstDayOfWeek.setDate(today.getDate() - today.getDay()); // 周日作为一周开始
+    
+    // 生成7天的日期数组
+    const weekDays = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(firstDayOfWeek);
+      date.setDate(firstDayOfWeek.getDate() + i);
+      return date;
+    });
+
+    // 按日期计算每日总热量
+    const dailyCalories = weekDays.map(day => {
+      const dayRecords = history.filter(record => {
+        const recordDate = new Date(record.timestamp);
+        return isSameDay(recordDate, day);
+      });
+      return {
+        day: day.toLocaleDateString('zh-CN', { weekday: 'short' }),
+        calories: dayRecords.reduce((sum, record) => sum + record.calories, 0)
+      };
+    });
+
+    return dailyCalories;
+  };
+
+  // 判断两个日期是否为同一天
+  const isSameDay = (date1: Date, date2: Date) => {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+  };
+
+  const { todayCalories, weekCalories, monthCalories } = getCaloriesStats();
+  const weeklyData = getWeeklyData();
 
   const filteredHistory = history.filter((record) =>
     record.summary.toLowerCase().includes(searchTerm.toLowerCase())
@@ -120,6 +201,68 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete }) => {
                 <span className="block text-xs text-gray-500">总热量</span>
                 <span className="font-bold text-emerald-600">{totalCalories} kcal</span>
             </div>
+        </div>
+      </div>
+      
+      {/* 统计卡片区域 - 位于搜索栏下方，记录上方 */}
+      <div className="p-4 space-y-4 border-b border-gray-100 bg-gray-50">
+        {/* 统计卡片行 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* 本日统计 */}
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4">
+            <div className="text-blue-800 text-sm font-medium mb-1">今日总热量</div>
+            <div className="text-2xl font-bold text-blue-900">{todayCalories}</div>
+            <div className="text-xs text-blue-600">kcal</div>
+          </div>
+          
+          {/* 本周统计 */}
+          <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-4">
+            <div className="text-emerald-800 text-sm font-medium mb-1">本周总热量</div>
+            <div className="text-2xl font-bold text-emerald-900">{weekCalories}</div>
+            <div className="text-xs text-emerald-600">kcal</div>
+          </div>
+          
+          {/* 本月统计 */}
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4">
+            <div className="text-purple-800 text-sm font-medium mb-1">本月总热量</div>
+            <div className="text-2xl font-bold text-purple-900">{monthCalories}</div>
+            <div className="text-xs text-purple-600">kcal</div>
+          </div>
+        </div>
+        
+        {/* 本周热量折线图 */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
+          <h3 className="font-semibold text-gray-800 mb-3">本周每日热量趋势</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart
+                data={weeklyData}
+                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+                <XAxis dataKey="day" stroke="#666" />
+                <YAxis stroke="#666" />
+                <Tooltip 
+                  formatter={(value) => [`${value} kcal`, '热量']}
+                  labelFormatter={(label) => `日期: ${label}`}
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '0.5rem' 
+                  }}
+                />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="calories" 
+                  stroke="#10b981" 
+                  strokeWidth={2} 
+                  activeDot={{ r: 8 }} 
+                  name="热量(kcal)" 
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
