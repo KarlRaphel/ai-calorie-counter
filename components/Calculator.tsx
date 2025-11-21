@@ -120,15 +120,6 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
       const conversation = messages.filter(m => m.id !== 'welcome');
       const result = await aiService.current.summarizeSession(conversation);
       onSaveMeal(result.summary, result.calories);
-      
-      if(confirm("保存成功！是否开始新的计算？")) {
-         setMessages([{
-            id: 'welcome',
-            role: 'model',
-            text: '已保存。准备好记录下一顿了吗？',
-            timestamp: Date.now(),
-         }]);
-      }
     } catch (e) {
       alert("保存失败，请重试");
     } finally {
