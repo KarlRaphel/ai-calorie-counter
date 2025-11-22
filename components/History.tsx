@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MealRecord } from '../types';
-import { Download, Search, CheckSquare, Square } from 'lucide-react';
+import { Download, Search, CheckSquare, Square, Copy, Edit, X } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -23,6 +23,11 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showBackupMenu, setShowBackupMenu] = useState(false);
+  const [showActionModal, setShowActionModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<MealRecord | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editSummary, setEditSummary] = useState('');
+  const [editCalories, setEditCalories] = useState('');
 
   // 点击外部区域关闭备份菜单
   useEffect(() => {
@@ -220,6 +225,77 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
     });
   };
 
+  const handleRecordClick = (record: MealRecord) => {
+    if (isSelectionMode) {
+      toggleSelection(record.id);
+    } else {
+      setSelectedRecord(record);
+      setShowActionModal(true);
+    }
+  };
+
+  const handleCopyToClipboard = () => {
+    if (selectedRecord) {
+      const text = `${selectedRecord.summary}\n热量: ${selectedRecord.calories} kcal\n时间: ${formatDate(selectedRecord.timestamp)}`;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('已复制到剪贴板');
+        setShowActionModal(false);
+        setSelectedRecord(null);
+      }).catch(err => {
+        console.error('复制失败:', err);
+        alert('复制失败，请重试');
+      });
+    }
+  };
+
+  const handleEditRecord = () => {
+    if (selectedRecord) {
+      setIsEditing(true);
+      setEditSummary(selectedRecord.summary);
+      setEditCalories(selectedRecord.calories.toString());
+    }
+  };
+
+  const handleSaveEdit = () => {
+    if (selectedRecord && editSummary.trim() && editCalories.trim()) {
+      const updatedRecord = {
+        ...selectedRecord,
+        summary: editSummary.trim(),
+        calories: parseInt(editCalories.trim())
+      };
+      
+      const updatedHistory = history.map(record => 
+        record.id === selectedRecord.id ? updatedRecord : record
+      );
+      
+      if (onImport) {
+        onImport(updatedHistory);
+      }
+      
+      setIsEditing(false);
+      setShowActionModal(false);
+      setSelectedRecord(null);
+      setEditSummary('');
+      setEditCalories('');
+    } else {
+      alert('请填写完整的信息');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditSummary('');
+    setEditCalories('');
+  };
+
+  const handleCloseModal = () => {
+    setShowActionModal(false);
+    setSelectedRecord(null);
+    setIsEditing(false);
+    setEditSummary('');
+    setEditCalories('');
+  };
+
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
       {/* Header */}
@@ -396,9 +472,9 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
           filteredHistory.slice().reverse().map((item) => (
             <div
               key={item.id}
-              onClick={() => isSelectionMode && toggleSelection(item.id)}
+              onClick={() => handleRecordClick(item)}
               className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all ${
-                isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : ''
+                isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : 'cursor-pointer active:scale-[0.98]'
               }`}
             >
               {isSelectionMode && (
@@ -424,6 +500,101 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
           ))
         )}
       </div>
+      
+      {/* 操作弹窗 */}
+      {showActionModal && selectedRecord && !isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">选择操作</h3>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-3">
+              <button
+                onClick={handleCopyToClipboard}
+                className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <Copy size={18} />
+                <span>复制到剪贴板</span>
+              </button>
+              
+              <button
+                onClick={handleEditRecord}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
+              >
+                <Edit size={18} />
+                <span>修改记录</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* 编辑弹窗 */}
+      {showActionModal && selectedRecord && isEditing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-800">修改记录</h3>
+              <button
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  食物描述
+                </label>
+                <textarea
+                  value={editSummary}
+                  onChange={(e) => setEditSummary(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  rows={3}
+                  placeholder="输入食物描述..."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  热量 (kcal)
+                </label>
+                <input
+                  type="number"
+                  value={editCalories}
+                  onChange={(e) => setEditCalories(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  placeholder="输入热量..."
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg transition-colors"
+                >
+                  保存
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
