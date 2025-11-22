@@ -85,6 +85,9 @@ const SettingsTab: React.FC<SettingsProps> = ({ settings, onSave }) => {
                 placeholder="your_model"
                 className="w-full p-3 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all text-sm"
               />
+              <p className="text-xs text-gray-500 mt-2 leading-relaxed">
+                ⭐️ 设置完了记得划到下面点一下保存！
+              </p>
             </div>
           </div>
           
