@@ -2,22 +2,27 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, AppSettings } from '../types';
 import { OpenAIService } from '../services/aiService';
-import { Camera, Send, Plus, X, Save, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Camera, Send, Plus, X, Save, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 
 interface CalculatorProps {
   settings: AppSettings;
   onSaveMeal: (summary: string, calories: number) => void;
+  savedMessages?: Message[];
+  onMessagesUpdate?: (messages: Message[]) => void;
 }
 
-const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      role: 'model',
-      text: '你好！我是你的卡路里助手。请上传食物照片或描述你吃的食物，我会帮你计算热量。本项目在Github开源（KarlRaphel/ai-calorie-counter），如果你觉得好用，欢迎点个Star 😘。',
-      timestamp: Date.now(),
-    },
-  ]);
+const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal, savedMessages, onMessagesUpdate }) => {
+  const [messages, setMessages] = useState<Message[]>(
+    savedMessages && savedMessages.length > 0 
+      ? savedMessages 
+      : [{
+          id: 'welcome',
+          role: 'model',
+          text: '你好！我是你的卡路里助手。请上传食物照片或描述你吃的食物，我会帮你计算热量。本项目在Github开源，如果你觉得好用，欢迎点个Star 😘。',
+          timestamp: Date.now(),
+        }]
+  );
+  const [hasUserInteraction, setHasUserInteraction] = useState(false);
   const [inputText, setInputText] = useState('');
   const [inputImage, setInputImage] = useState<string | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +41,13 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading]);
+
+  // Notify parent component when messages change
+  useEffect(() => {
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages);
+    }
+  }, [messages, onMessagesUpdate]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,6 +74,7 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
       timestamp: Date.now(),
     };
 
+    setHasUserInteraction(true);
     setMessages((prev) => [...prev, newMessage]);
     setInputText('');
     setInputImage(undefined);
@@ -120,11 +133,24 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
       const conversation = messages.filter(m => m.id !== 'welcome');
       const result = await aiService.current.summarizeSession(conversation);
       onSaveMeal(result.summary, result.calories);
+      // 不再清空聊天记录
     } catch (e) {
       alert("保存失败，请重试");
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 'welcome',
+        role: 'model',
+        text: '你好！我是你的卡路里助手。请上传食物照片或描述你吃的食物，我会帮你计算热量。本项目在Github开源，如果你觉得好用，欢迎点个Star 😘。',
+        timestamp: Date.now(),
+      },
+    ]);
+    setHasUserInteraction(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -140,7 +166,19 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
       <div className="bg-white px-4 py-4 shadow-sm z-10">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">卡路里计算器</h1>
-          <button 
+          <div className="flex items-center gap-2">
+            {/* Clear Button - only show when there are real messages */}
+            {messages.filter(m => m.id !== 'welcome').length > 0 && (
+              <button 
+                onClick={handleClearChat}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-semibold bg-red-100 text-red-600 hover:bg-red-200 active:bg-red-300 transition-all"
+                title="清空聊天记录"
+              >
+                <Trash2 size={14} />
+                清空
+              </button>
+            )}
+            <button 
               onClick={handleSave}
               disabled={messages.length < 2 || isSaving}
               className={`flex items-center gap-1 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
@@ -152,6 +190,7 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
               {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
               保存记录
           </button>
+          </div>
         </div>
       </div>
 
@@ -179,6 +218,14 @@ const CalculatorTab: React.FC<CalculatorProps> = ({ settings, onSaveMeal }) => {
                 />
               )}
               {msg.text}
+              {msg.id === 'welcome' && (
+                <button
+                  onClick={() => window.open('https://github.com/KarlRaphel/ai-calorie-counter', '_blank')}
+                  className="block mt-2 text-blue-500 hover:text-blue-700 underline text-xs cursor-pointer"
+                >
+                  点击访问 GitHub 项目
+                </button>
+              )}
             </div>
             <span className="text-[10px] text-gray-400 mt-1 px-1">
               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

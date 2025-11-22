@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Tab, AppSettings, MealRecord } from './types';
+import { Tab, AppSettings, MealRecord, Message } from './types';
 import { getSettings, saveSettings, getHistory, saveHistory } from './utils/storage';
 import BottomNav from './components/BottomNav';
 import CalculatorTab from './components/Calculator';
@@ -10,6 +10,7 @@ const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.CALCULATOR);
   const [settings, setSettings] = useState<AppSettings>(getSettings());
   const [history, setHistory] = useState<MealRecord[]>(getHistory());
+  const [calculatorMessages, setCalculatorMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     // Sync initial load
@@ -35,6 +36,10 @@ const App: React.FC = () => {
     setActiveTab(Tab.HISTORY);
   };
 
+  const handleUpdateCalculatorMessages = (messages: Message[]) => {
+    setCalculatorMessages(messages);
+  };
+
   const handleDeleteHistory = (ids: string[]) => {
     const updatedHistory = history.filter(record => !ids.includes(record.id));
     setHistory(updatedHistory);
@@ -49,13 +54,23 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case Tab.CALCULATOR:
-        return <CalculatorTab settings={settings} onSaveMeal={handleSaveMeal} />;
+        return <CalculatorTab 
+          settings={settings} 
+          onSaveMeal={handleSaveMeal} 
+          savedMessages={calculatorMessages}
+          onMessagesUpdate={handleUpdateCalculatorMessages}
+        />;
       case Tab.HISTORY:
         return <HistoryTab history={history} onDelete={handleDeleteHistory} onImport={handleUpdateHistory} />;
       case Tab.SETTINGS:
         return <SettingsTab settings={settings} onSave={handleSaveSettings} />;
       default:
-        return <CalculatorTab settings={settings} onSaveMeal={handleSaveMeal} />;
+        return <CalculatorTab 
+          settings={settings} 
+          onSaveMeal={handleSaveMeal} 
+          savedMessages={calculatorMessages}
+          onMessagesUpdate={handleUpdateCalculatorMessages}
+        />;
     }
   };
 
