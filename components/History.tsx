@@ -11,6 +11,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import Header from './Header';
 
 interface HistoryProps {
   history: MealRecord[];
@@ -59,14 +60,14 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
         const importedData: any[] = JSON.parse(text);
 
         // 验证导入的数据格式
-        if (!Array.isArray(importedData) || 
-            !importedData.every(item => 
-              typeof item === 'object' && 
-              'id' in item && 
-              'timestamp' in item && 
-              'summary' in item && 
-              'calories' in item
-            )) {
+        if (!Array.isArray(importedData) ||
+          !importedData.every(item =>
+            typeof item === 'object' &&
+            'id' in item &&
+            'timestamp' in item &&
+            'summary' in item &&
+            'calories' in item
+          )) {
           alert('导入的文件格式不正确');
           return;
         }
@@ -112,8 +113,8 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
   const isToday = (date: Date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   const isThisWeek = (date: Date) => {
@@ -122,14 +123,14 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
     firstDayOfWeek.setDate(today.getDate() - today.getDay()); // 周日作为一周开始
     const lastDayOfWeek = new Date(firstDayOfWeek);
     lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6);
-    
+
     return date >= firstDayOfWeek && date <= lastDayOfWeek;
   };
 
   const isThisMonth = (date: Date) => {
     const today = new Date();
     return date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getFullYear() === today.getFullYear();
   };
 
   // 统计函数
@@ -137,7 +138,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
     const todayCalories = history.filter(record => isToday(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
     const weekCalories = history.filter(record => isThisWeek(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
     const monthCalories = history.filter(record => isThisMonth(new Date(record.timestamp))).reduce((sum, record) => sum + record.calories, 0);
-    
+
     return { todayCalories, weekCalories, monthCalories };
   };
 
@@ -146,7 +147,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
     const today = new Date();
     const firstDayOfWeek = new Date(today);
     firstDayOfWeek.setDate(today.getDate() - today.getDay()); // 周日作为一周开始
-    
+
     // 生成7天的日期数组
     const weekDays = Array.from({ length: 7 }, (_, i) => {
       const date = new Date(firstDayOfWeek);
@@ -172,8 +173,8 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
   // 判断两个日期是否为同一天
   const isSameDay = (date1: Date, date2: Date) => {
     return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear();
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear();
   };
 
   const { todayCalories, weekCalories, monthCalories } = getCaloriesStats();
@@ -263,15 +264,15 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
         summary: editSummary.trim(),
         calories: parseInt(editCalories.trim())
       };
-      
-      const updatedHistory = history.map(record => 
+
+      const updatedHistory = history.map(record =>
         record.id === selectedRecord.id ? updatedRecord : record
       );
-      
+
       if (onImport) {
         onImport(updatedHistory);
       }
-      
+
       setIsEditing(false);
       setShowActionModal(false);
       setSelectedRecord(null);
@@ -299,21 +300,21 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
   return (
     <div className="flex flex-col h-full bg-gray-50 overflow-hidden">
       {/* Header */}
-      <div className="bg-white px-4 py-4 shadow-sm z-10">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-gray-800">饮食记录</h1>
+      <Header
+        title="饮食记录"
+        rightElement={
           <div className="flex gap-2 relative">
             {!isSelectionMode ? (
               <>
                 <div className="relative backup-menu-container">
                   <button
                     onClick={() => setShowBackupMenu(!showBackupMenu)}
-                    className="p-2 text-gray-600 hover:bg-gray-100 rounded-full"
+                    className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-full"
                     title="备份管理"
                   >
                     <Download size={20} />
                   </button>
-                  
+
                   {showBackupMenu && (
                     <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-2">
                       <button
@@ -346,7 +347,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
               </>
             ) : (
               <>
-                 <button
+                <button
                   onClick={handleDeleteSelected}
                   disabled={selectedIds.size === 0}
                   className={`text-red-500 font-medium text-sm px-2 ${selectedIds.size === 0 ? 'opacity-50' : ''}`}
@@ -375,49 +376,49 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
               </>
             )}
           </div>
-        </div>
-        
-        {/* Search */}
-        <div className="flex gap-3 items-center">
-            <div className="relative flex-1">
-                <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input 
-                    type="text" 
-                    placeholder="搜索记录..." 
-                    value={searchTerm}
-                    onChange={e => setSearchTerm(e.target.value)}
-                    className="w-full bg-gray-100 text-sm py-2 pl-9 pr-4 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-            </div>
+        }
+      />
+
+      {/* Search */}
+      <div className="px-4 py-2 bg-white border-b border-gray-100">
+        <div className="relative">
+          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="搜索记录..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+            className="w-full bg-gray-100 text-sm py-2 pl-9 pr-4 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500"
+          />
         </div>
       </div>
-      
+
       {/* 统计卡片区域 - 位于搜索栏下方，记录上方 */}
       <div className="p-4 space-y-4 border-b border-gray-100 bg-gray-50">
         {/* 统计卡片行 */}
         <div className="grid grid-cols-3 gap-2">
           {/* 本日统计 */}
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-3">
             <div className="text-blue-800 text-xs font-medium mb-1">今日热量</div>
             <div className="text-lg font-bold text-blue-900">{todayCalories}</div>
             <div className="text-[10px] text-blue-600">kcal</div>
           </div>
-          
+
           {/* 本周统计 */}
-          <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-lg p-3">
+          <div className="bg-gradient-to-r from-emerald-50 to-emerald-100 border border-emerald-200 rounded-xl p-3">
             <div className="text-emerald-800 text-xs font-medium mb-1">本周热量</div>
             <div className="text-lg font-bold text-emerald-900">{weekCalories}</div>
             <div className="text-[10px] text-emerald-600">kcal</div>
           </div>
-          
+
           {/* 本月统计 */}
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-3">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-3">
             <div className="text-purple-800 text-xs font-medium mb-1">本月热量</div>
             <div className="text-lg font-bold text-purple-900">{monthCalories}</div>
             <div className="text-[10px] text-purple-600">kcal</div>
           </div>
         </div>
-        
+
         {/* 本周热量折线图 */}
         <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
           <h3 className="font-semibold text-gray-800 text-sm mb-3">本周每日热量趋势</h3>
@@ -428,33 +429,33 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                 margin={{ top: 15, right: 15, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                <XAxis 
-                  dataKey="day" 
-                  stroke="#666" 
-                  tick={{ fontSize: 11 }} 
+                <XAxis
+                  dataKey="day"
+                  stroke="#666"
+                  tick={{ fontSize: 11 }}
                   padding={{ left: 5, right: 5 }}
                 />
-                <YAxis 
-                  stroke="#666" 
-                  tick={{ fontSize: 11 }} 
+                <YAxis
+                  stroke="#666"
+                  tick={{ fontSize: 11 }}
                   width={35}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => [`${value} kcal`, '热量']}
                   labelFormatter={(label) => `日期: ${label}`}
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb', 
+                  contentStyle={{
+                    backgroundColor: 'white',
+                    border: '1px solid #e5e7eb',
                     borderRadius: '0.5rem',
                     fontSize: '12px'
                   }}
                 />
-                <Line 
-                  type="monotone" 
-                  dataKey="calories" 
-                  stroke="#10b981" 
-                  strokeWidth={2} 
-                  activeDot={{ r: 6 }} 
+                <Line
+                  type="monotone"
+                  dataKey="calories"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  activeDot={{ r: 6 }}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -473,16 +474,15 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
             <div
               key={item.id}
               onClick={() => handleRecordClick(item)}
-              className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all ${
-                isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : 'cursor-pointer active:scale-[0.98]'
-              }`}
+              className={`bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition-all ${isSelectionMode ? 'cursor-pointer active:scale-[0.98]' : 'cursor-pointer active:scale-[0.98]'
+                }`}
             >
               {isSelectionMode && (
                 <div className={selectedIds.has(item.id) ? 'text-emerald-500' : 'text-gray-300'}>
                   {selectedIds.has(item.id) ? <CheckSquare size={20} /> : <Square size={20} />}
                 </div>
               )}
-              
+
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <span className="text-xs text-gray-400 font-medium mb-1 block">
@@ -500,7 +500,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
           ))
         )}
       </div>
-      
+
       {/* 操作弹窗 */}
       {showActionModal && selectedRecord && !isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -514,7 +514,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-3">
               <button
                 onClick={handleCopyToClipboard}
@@ -523,7 +523,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                 <Copy size={18} />
                 <span>复制到剪贴板</span>
               </button>
-              
+
               <button
                 onClick={handleEditRecord}
                 className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors"
@@ -535,7 +535,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
           </div>
         </div>
       )}
-      
+
       {/* 编辑弹窗 */}
       {showActionModal && selectedRecord && isEditing && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -549,7 +549,7 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -558,12 +558,12 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                 <textarea
                   value={editSummary}
                   onChange={(e) => setEditSummary(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   rows={3}
                   placeholder="输入食物描述..."
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   热量 (kcal)
@@ -572,21 +572,21 @@ const HistoryTab: React.FC<HistoryProps> = ({ history, onDelete, onImport }) => 
                   type="number"
                   value={editCalories}
                   onChange={(e) => setEditCalories(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
                   placeholder="输入热量..."
                 />
               </div>
-              
+
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleSaveEdit}
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 px-4 rounded-xl transition-colors"
                 >
                   保存
                 </button>
                 <button
                   onClick={handleCancelEdit}
-                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+                  className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-xl transition-colors"
                 >
                   取消
                 </button>
